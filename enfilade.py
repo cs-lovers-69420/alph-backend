@@ -19,7 +19,7 @@ class Enfilade:
     def __init__(self, name, source_file):
         """
         Creates an Enfilade with specified name from a preprocessed source file.
-        When stored in memory, the filepath will include name.
+        When stored in memory, the filepath will be a textfile [source_file].enf.
         """
         self.name = name
         self.source_file = source_file  # TODO: Put the parsing stuff here maybe?
