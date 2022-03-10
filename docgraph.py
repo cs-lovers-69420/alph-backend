@@ -80,6 +80,28 @@ class DocGraph:
             elif suggest and ref not in self.suggested_docs:
                 self.suggested_docs.append(ref)
 
+    def get_nodes(self):
+        """Return a list of all nodes in the graph."""
+        return [node for node in self.elements]
+
+    def get_edges(self, req_node):
+        """Return a list of all edges for a specified node."""
+        if req_node in self.elements:
+            return [node for node in self.elements[req_node]["Edges"]]
+        else:
+            raise KeyError(f"'{req_node}' does not exist")
+
+    def get_graph(self):
+        """Returns the dictionary representation of the graph."""
+        return self.elements
+
+    def reset(self):
+        """
+        Reset the docgraph. Used for testing purposes.
+        """
+        self.elements = {}
+        self.suggested_docs = []
+
 
 if __name__ == '__main__':
     documents = DocGraph()
