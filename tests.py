@@ -1,9 +1,6 @@
 # Test scripts for Project Alph backend work
 # TODO: switch to Unittest
 
-from audioop import add
-from cgi import test
-from queue import Empty
 import sys
 from docgraph import DocGraph
 

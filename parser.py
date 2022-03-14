@@ -3,24 +3,41 @@
 
 from collections import defaultdict
 import os
-import urllib3
+import re
+import requests
 from bs4 import BeautifulSoup
 
 
 def parse_html(filepath):
-    title = os.path.basename(filepath)  # Title of paper (FIXME)
+    """
+    Gets information from an html file (TODO: add hyperlink functionality?)
+    NOTE: Might need to modify for paper links, but vast majority of functionality probably
+    going to be PDFs.
+    """
+    title = ""  # Title of paper (FIXME)
     authors = []  # Authors of paper
-    citations = ["doc1", "doc2", "doc3"]  # Titles of cited works
+    citations = []  # Titles of cited works
 
+    # Get file
     if not os.path.exists(filepath):
         print("Path doesn't exist")
         return
-    file = open(filepath)
-    soup = BeautifulSoup(file, 'html.parser')
-    print(soup.title)
+    html = open(filepath)
+    soup = BeautifulSoup(html, 'html.parser')
 
-    for link in soup.find_all('a'):
-        print(link.get('href'))  # TODO: Need to filter these links
+    # Get title from HTML title (NOTE: might not work?)
+    title = soup.title.string
+
+    # Get all links and titles of webpages they correspond to
+    # TODO: If adding hyperlink functionality, might want to return links instead of titles
+    all_links = [tag['href'] for tag in soup.select('p a[href]')]
+    print(all_links)
+    for link in all_links:
+        response = requests.get(link)
+        citations.append(BeautifulSoup(
+            response.text, "html.parser").title.string)
+
+    print(citations)
 
     ret = defaultdict(None)
     ret["title"] = title
