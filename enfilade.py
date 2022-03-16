@@ -4,8 +4,8 @@
 # children of the node.
 
 # TODO:
-# 1) Is the overall substructure necessary? Do we need to make "subsections"?
-# 2) If so, what about for connections that don't correspond to a subsection?
+# 1) Need some sort of info about where in the document citations are made. Might
+#    need to move the edge logic into here.
 
 class Enfilade:
     """

@@ -7,6 +7,7 @@
 # citations, the Node class runs the parser.
 
 import parser
+
 from enfilade import Enfilade
 
 
@@ -14,16 +15,22 @@ class Node:
 
     def __init__(self, source_file):
         self.source_file = source_file
-        self.connections = []  # List of connections to other documents
 
         # Parse provided file and get information about document
-        paper_info = parser.parse_html(source_file)
+        paper_info = parser.parse(source_file)
         self.title = paper_info["title"]
         self.authors = paper_info["authors"]
-        self.citations = paper_info["citations"]
+        # FIXME: Might have to change to include page info
+        self.set_citations(paper_info["citations"])
 
-        # Store document as an Enfilade
+        # Store document as an Enfilade (TODO: include page info here?)
         self.document = Enfilade(self.title, self.source_file)
+
+    def set_citations(self, citation_list):
+        """
+        Sets the citations for this node to the provided list.
+        """
+        self.citations = citation_list
 
 
 class DocGraph:
@@ -37,9 +44,14 @@ class DocGraph:
     def add_node(self, filepath):
         """Add a new node to the graph"""
         new_node = Node(filepath)
+        if new_node.title in self.elements:
+            # Instead of raising an error, just silently exit
+            # TODO: Raise a warning instead?
+            return
         self.elements[new_node.title] = {"Node": new_node, "Edges": []}
 
         # If this new node was one of the suggested ones, remove it from there
+        # TODO: automatically add the relevant citation?
         if new_node.title in self.suggested_docs:
             self.suggested_docs.remove(new_node.title)
 
@@ -49,17 +61,20 @@ class DocGraph:
         Takes two strings as input.
         """
         # Verify that both are in the graph
-        if node1 not in self.elements or node2 not in self.elements:
-            print("Error: node not found")
-            return False
+        if node1 not in self.elements:
+            raise KeyError(f"'{node1}' could not be found")
+        elif node2 not in self.elements:
+            raise KeyError(f"'{node2}' could not be found")
 
         # Check if the edge already exists
         if node2 in self.elements[node1]["Edges"] or \
                 node1 in self.elements[node2]["Edges"]:
             return True
 
+        # Create the edge
         self.elements[node1]["Edges"].append(node2)
         self.elements[node2]["Edges"].append(node1)
+        return True
 
     def add_all_connections(self, node_name, suggest=True):
         """
@@ -69,8 +84,8 @@ class DocGraph:
         already in the graph.
         """
         if node_name not in self.elements:
-            print("Error: node not found")
-            return False
+            # TODO: Raise an error
+            raise KeyError(f"'{node_name}' could not be found")
 
         node = self.elements[node_name]["Node"]
         # Make a connection for every citation
@@ -80,16 +95,23 @@ class DocGraph:
             elif suggest and ref not in self.suggested_docs:
                 self.suggested_docs.append(ref)
 
-    def get_nodes(self):
+    def list_nodes(self):
         """Return a list of all nodes in the graph."""
         return [node for node in self.elements]
 
-    def get_edges(self, req_node):
+    def get_node(self, req_node) -> Node:
+        """Return the requested node object."""
+        if req_node in self.elements:
+            return self.elements[req_node]["Node"]
+        else:
+            raise KeyError(f"'{req_node}' could not be found")
+
+    def list_edges(self, req_node):
         """Return a list of all edges for a specified node."""
         if req_node in self.elements:
             return [node for node in self.elements[req_node]["Edges"]]
         else:
-            raise KeyError(f"'{req_node}' does not exist")
+            raise KeyError(f"'{req_node}' could not be found")
 
     def get_graph(self):
         """Returns the dictionary representation of the graph."""
