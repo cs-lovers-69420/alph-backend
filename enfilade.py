@@ -7,6 +7,9 @@
 # 1) Need some sort of info about where in the document citations are made. Might
 #    need to move the edge logic into here.
 
+from collections import defaultdict
+
+
 class Enfilade:
     """
     An Enfilade class designed for Project Alph. Can make subtrees at the paragraph level.
@@ -22,10 +25,31 @@ class Enfilade:
         When stored in memory, the filepath will be a textfile [source_file].enf.
         """
         self.name = name
-        self.source_file = source_file  # TODO: Put the parsing stuff here maybe?
+        self.source_file = source_file
 
     def create_structure(self):
         """
         Creates the Enfilade structure (TODO: do this)
         """
         pass
+
+    def add_citations(self, citation_list):
+        """
+        Reads in a list of citations for the document (provided by the parser)
+        and stores them as data for the Enfilade. citation_list is a list of
+        tuples (title, page_number) for every citation in the document.
+        """
+        # This will be a dictionary keyed by title, where the value is a list of
+        # page numbers where that title is cited.
+        # TODO: store as matrix, so can get both titles on a page and pages for a title?
+        self.references = defaultdict(lambda: [])
+        citation_list = list(set(citation_list))
+        for pair in citation_list:
+            self.references[pair[0]].append(pair[1])
+
+    def get_citations(self):
+        """
+        Return a list of cited documents (not including the page numbers).
+        """
+        refs = [title for title in self.references]
+        return list(set(refs))

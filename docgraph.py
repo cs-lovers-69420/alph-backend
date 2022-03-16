@@ -20,17 +20,24 @@ class Node:
         paper_info = parser.parse(source_file)
         self.title = paper_info["title"]
         self.authors = paper_info["authors"]
-        # FIXME: Might have to change to include page info
-        self.set_citations(paper_info["citations"])
 
-        # Store document as an Enfilade (TODO: include page info here?)
+        # Store document as an Enfilade
         self.document = Enfilade(self.title, self.source_file)
+
+        # Set citations
+        self.set_citations(paper_info["citations"])
 
     def set_citations(self, citation_list):
         """
         Sets the citations for this node to the provided list.
         """
-        self.citations = citation_list
+        self.document.add_citations(citation_list)
+
+    def get_citations(self):
+        """
+        Returns a list of the citations for this node.
+        """
+        return self.document.get_citations()
 
 
 class DocGraph:
@@ -89,7 +96,7 @@ class DocGraph:
 
         node = self.elements[node_name]["Node"]
         # Make a connection for every citation
-        for ref in node.citations:
+        for ref in node.get_citations():
             if ref in self.elements:
                 self.add_edge(node_name, ref)
             elif suggest and ref not in self.suggested_docs:

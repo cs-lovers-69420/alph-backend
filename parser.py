@@ -16,7 +16,7 @@ def _parse_html(filepath):
     """
     title = ""  # Title of paper (FIXME)
     authors = []  # Authors of paper (TODO: get by regex search maybe?)
-    citations = []  # Titles of cited works
+    citations = []  # Titles of cited works with page refs for where they appear
 
     # Get file
     if not os.path.exists(filepath):
@@ -33,8 +33,8 @@ def _parse_html(filepath):
     all_links = [tag['href'] for tag in soup.select('p a[href]')]
     for link in all_links:
         response = requests.get(link)
-        citations.append(BeautifulSoup(
-            response.text, "html.parser").title.string)
+        citations.append((BeautifulSoup(
+            response.text, "html.parser").title.string, -1))
 
     print(citations)
 
@@ -82,6 +82,6 @@ def parse(filepath):
         return _parse_test(filepath)
 
 
-# if __name__ == '__main__':
-#     parse(
-#         "Tests/The Covid-19 Pandemic Has Lasted 2 Years. The Next Steps Are Divisive. - The New York Times.html")
+if __name__ == '__main__':
+    parse(
+        "Tests/The Covid-19 Pandemic Has Lasted 2 Years. The Next Steps Are Divisive. - The New York Times.html")

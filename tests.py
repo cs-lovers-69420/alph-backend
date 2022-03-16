@@ -89,7 +89,7 @@ def test_docgraph():
     test_graph.add_node("Tests/node4")
     # Manually set citations for node1
     node = test_graph.get_node("node1")
-    cits = ["node2", "node3", "node4", "node5"]
+    cits = [("node2", 0), ("node3", 2), ("node4", 1), ("node5", 2)]
     node.set_citations(cits)
     test_graph.add_all_connections("node1")
     connections = test_graph.list_edges("node1")
