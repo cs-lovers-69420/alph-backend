@@ -12,7 +12,7 @@ def test_docgraph():
 
     # Test adding nodes
     print("Test adding nodes")
-    nodes = ["Tests/node1", "Tests/node2", "Tests/node3"]
+    nodes = ["TestData/node1", "TestData/node2", "TestData/node3"]
     for node in nodes:
         test_graph.add_node(node)
     added_nodes = test_graph.list_nodes()
@@ -41,13 +41,13 @@ def test_docgraph():
 
     # Already existing node
     print("Test adding node that already exists")
-    test_graph.add_node("Tests/node1")
-    test_graph.add_node("Tests/node1")
+    test_graph.add_node("TestData/node1")
+    test_graph.add_node("TestData/node1")
     assert(len(test_graph.list_nodes()) == 1)
 
     # Already existing edge
     print("Test adding edge that already exists")
-    test_graph.add_node("Tests/node2")
+    test_graph.add_node("TestData/node2")
     test_graph.add_edge("node1", "node2")
     test_graph.add_edge("node2", "node1")
     assert(len(test_graph.list_edges("node1")) == 1)
@@ -75,7 +75,7 @@ def test_docgraph():
     # Test nonexistent file
     print("Test nonexistent file")
     try:
-        test_graph.add_node("Tests/nonexistent")
+        test_graph.add_node("TestData/nonexistent")
         assert(False)
     except FileNotFoundError:
         assert(True)
@@ -83,10 +83,10 @@ def test_docgraph():
     # Test adding all connections
     print("Test adding all connections")
     test_graph.reset()
-    test_graph.add_node("Tests/node1")
-    test_graph.add_node("Tests/node2")
-    test_graph.add_node("Tests/node3")
-    test_graph.add_node("Tests/node4")
+    test_graph.add_node("TestData/node1")
+    test_graph.add_node("TestData/node2")
+    test_graph.add_node("TestData/node3")
+    test_graph.add_node("TestData/node4")
     # Manually set citations for node1
     node = test_graph.get_node("node1")
     cits = [("node2", 0), ("node3", 2), ("node4", 1), ("node5", 2)]
@@ -99,8 +99,8 @@ def test_docgraph():
     assert("node5" in test_graph.suggested_docs)
 
     # Test if suggested docs is updated properly
-    print("Testing removal from document suggestions")
-    test_graph.add_node("Tests/node5")
+    print("Test removal from document suggestions")
+    test_graph.add_node("TestData/node5")
     assert("node5" not in test_graph.suggested_docs)
 
 

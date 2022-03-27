@@ -3,8 +3,9 @@
 
 from collections import defaultdict
 import os
-import re
 import requests
+import PyPDF2
+import textract
 from bs4 import BeautifulSoup
 
 
@@ -47,9 +48,37 @@ def _parse_html(filepath):
 
 
 def _parse_pdf(filepath):
+    """Parses a pdf file"""
+    print("Parsing pdf")
+
+    # Create PDF reader
+    pdffile = open(filepath, 'rb')
+    pdfReader = PyPDF2.PdfFileReader(pdffile)
+
+    # Get title from metadata
+    # NOTE: This seems to work for most PDFs I've tried, but it's possible it won't
+    # work for every PDF
+    doc_info = pdfReader.getDocumentInfo()
+    title = doc_info["/Title"]
+
+    # Get text that corresponds to citations
+    # NOTE: A different module is used that is better at handling the text
+    pdftext = textract.process(filepath).decode("utf-8")
+    # NOTE: Won't work if a cited paper has "references" in the title
+    # TODO: replace with regex if this doesn't work reliably
+    ind = pdftext.rfind("References")
+    if ind == -1:
+        ind = pdftext.rfind("REFERENCES")
+    refs = pdftext[ind:]
+    print(refs)
+
+    # Find all citations
+    # Starting with n=1: find citation n, get the citation, repeat for n+1 on the remaining
+    # references string not including the citation. Get citation by looking for next number.
+
     ret = defaultdict(lambda: None)
-    ret["title"] = os.path.basename(filepath)
-    ret["authors"] = []
+    ret["title"] = title
+    ret["authors"] = []  # TODO: Are authors necessary?
     ret["citations"] = []
     return ret
 
@@ -84,4 +113,6 @@ def parse(filepath):
 
 if __name__ == '__main__':
     parse(
-        "Tests/The Covid-19 Pandemic Has Lasted 2 Years. The Next Steps Are Divisive. - The New York Times.html")
+        "TestData/sciadv.abj2479.pdf")
+    # parse(
+    #     "TestData/3171221.3171289.pdf")
