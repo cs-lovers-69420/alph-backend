@@ -3,6 +3,8 @@
 
 from collections import defaultdict
 import os
+from queue import Empty
+import re
 import requests
 import PyPDF2
 import textract
@@ -49,32 +51,67 @@ def _parse_html(filepath):
 
 def _parse_pdf(filepath):
     """Parses a pdf file"""
-    print("Parsing pdf")
-
-    # Create PDF reader
+    # Open file for use later
     pdffile = open(filepath, 'rb')
-    pdfReader = PyPDF2.PdfFileReader(pdffile)
 
-    # Get title from metadata
+    # Get citations from the scholarcy API
+    print(filepath)
+    resp = requests.post(
+        "https://ref.scholarcy.com/api/references/extract",
+        files={'file': (filepath, pdffile, 'application/pdf')})
+    refs = resp.json()['references']
+    if len(refs) == 0:
+        print("Error finding references")
+        return
+    print(refs[0])
+
+    # TODO: DON'T EXTRACT TITLE FROM CITATION. INSTEAD, SEE IF THE TITLE YOU WANT
+    # IS IN THE CITATION.
+
+    # Get title from metadata by reading PDF
     # NOTE: This seems to work for most PDFs I've tried, but it's possible it won't
     # work for every PDF
+    pdfReader = PyPDF2.PdfFileReader(pdffile)
     doc_info = pdfReader.getDocumentInfo()
     title = doc_info["/Title"]
 
-    # Get text that corresponds to citations
-    # NOTE: A different module is used that is better at handling the text
-    pdftext = textract.process(filepath).decode("utf-8")
-    # NOTE: Won't work if a cited paper has "references" in the title
-    # TODO: replace with regex if this doesn't work reliably
-    ind = pdftext.rfind("References")
-    if ind == -1:
-        ind = pdftext.rfind("REFERENCES")
-    refs = pdftext[ind:]
-    print(refs)
+    # # Get text that corresponds to citations
+    # # NOTE: A different module is used that is better at handling the text
+    # pdftext = textract.process(filepath).decode("utf-8")
+    # # NOTE: Won't work if a cited paper has "references" in the title
+    # # TODO: replace with regex if this doesn't work reliably
+    # ind = pdftext.rfind("References")
+    # if ind == -1:
+    #     ind = pdftext.rfind("REFERENCES")
+    # refs = pdftext[ind:]
+    # # print(refs)
 
-    # Find all citations
-    # Starting with n=1: find citation n, get the citation, repeat for n+1 on the remaining
-    # references string not including the citation. Get citation by looking for next number.
+    # # Find all citations
+    # # Starting with n=1: find citation n, get the citation, repeat for n+1 on the remaining
+    # # references string not including the citation. Get citation by looking for next number.
+    # # NOTE: won't work if citations aren't numbered. Is this ever the case? Idk.
+
+    # # Determine what's to the left and right of the first number to find other numbers
+    # re_specialchars = r".+*?^$()[]{}\|"
+    # curr = 1
+    # index = refs.find(str(curr))
+    # left_char = refs[index-1]
+    # right_char = refs[index+1]
+
+    # # Need to escape special characters if included
+    # if left_char in re_specialchars:
+    #     left_char = "\\" + left_char
+    # if right_char in re_specialchars:
+    #     right_char = "\\" + right_char
+    # expr = r"\s+" + left_char.strip() + r"\d+" + right_char.strip()
+    # # print(expr)
+
+    # citations = re.split(expr, refs)[1:]
+    # print(citations[0])
+    # print("\n\n")
+    # print(citations[1])
+    # print("\n\n")
+    # print(citations[2])
 
     ret = defaultdict(lambda: None)
     ret["title"] = title
