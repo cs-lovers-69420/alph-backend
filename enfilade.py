@@ -37,7 +37,7 @@ class Enfilade:
         """
         Reads in a list of citations for the document (provided by the parser)
         and stores them as data for the Enfilade. citation_list is a list of
-        tuples (title, page_number) for every citation in the document.
+        tuples (title, [page_numbers]) for every citation in the document.
         """
         # This will be a dictionary keyed by title, where the value is a list of
         # page numbers where that title is cited.

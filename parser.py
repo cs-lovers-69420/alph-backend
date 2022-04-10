@@ -55,7 +55,6 @@ def _parse_pdf(filepath):
     pdffile = open(filepath, 'rb')
 
     # Get citations from the scholarcy API
-    print(filepath)
     resp = requests.post(
         "https://ref.scholarcy.com/api/references/extract",
         files={'file': (filepath, pdffile, 'application/pdf')})
@@ -63,17 +62,23 @@ def _parse_pdf(filepath):
     if len(refs) == 0:
         print("Error finding references")
         return
-    print(refs[0])
-
-    # TODO: DON'T EXTRACT TITLE FROM CITATION. INSTEAD, SEE IF THE TITLE YOU WANT
-    # IS IN THE CITATION.
+    # print(refs)
+    print(resp.json().keys())
+    print(resp.json()['metadata'])
 
     # Get title from metadata by reading PDF
     # NOTE: This seems to work for most PDFs I've tried, but it's possible it won't
     # work for every PDF
     pdfReader = PyPDF2.PdfFileReader(pdffile)
     doc_info = pdfReader.getDocumentInfo()
+    print(doc_info)
     title = doc_info["/Title"]
+
+    # TODO: Determine where citations are in the document and associate a list of
+    # page numbers with each citation. This isn't strictly necessary but could
+    # be nice.
+    refs = [(ref, -1) for ref in refs]
+    print(refs[0])
 
     # # Get text that corresponds to citations
     # # NOTE: A different module is used that is better at handling the text
@@ -116,7 +121,7 @@ def _parse_pdf(filepath):
     ret = defaultdict(lambda: None)
     ret["title"] = title
     ret["authors"] = []  # TODO: Are authors necessary?
-    ret["citations"] = []
+    ret["citations"] = refs
     return ret
 
 
@@ -149,7 +154,8 @@ def parse(filepath):
 
 
 if __name__ == '__main__':
-    parse(
-        "TestData/sciadv.abj2479.pdf")
+    # parse(
+    #     "TestData/sciadv.abj2479.pdf")
     # parse(
     #     "TestData/3171221.3171289.pdf")
+    parse("TestData/Rasmussen2011_Article_AnOpenSystemFrameworkForIntegr.pdf")

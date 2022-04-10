@@ -59,8 +59,13 @@ class DocGraph:
 
         # If this new node was one of the suggested ones, remove it from there
         # TODO: automatically add the relevant citation?
-        if new_node.title in self.suggested_docs:
-            self.suggested_docs.remove(new_node.title)
+        for citation in self.suggested_docs:
+            if new_node.title in citation:
+                self.suggested_docs.remove(citation)
+                break
+
+        # if new_node.title in self.suggested_docs:
+        #     self.suggested_docs.remove(new_node.title)
 
     def add_edge(self, node1, node2):
         """
@@ -96,11 +101,15 @@ class DocGraph:
 
         node = self.elements[node_name]["Node"]
         # Make a connection for every citation
-        for ref in node.get_citations():
-            if ref in self.elements:
-                self.add_edge(node_name, ref)
-            elif suggest and ref not in self.suggested_docs:
-                self.suggested_docs.append(ref)
+        for citation in node.get_citations():
+            found = False
+            for title in self.elements:
+                if title in citation:
+                    self.add_edge(node_name, title)
+                    found = True
+                    break
+            if suggest and not found:
+                self.suggested_docs.append(citation)
 
     def list_nodes(self):
         """Return a list of all nodes in the graph."""

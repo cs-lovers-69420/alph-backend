@@ -103,6 +103,13 @@ def test_docgraph():
     test_graph.add_node("TestData/node5")
     assert("node5" not in test_graph.suggested_docs)
 
+    # Test automatic addition of citations
+    test_graph.reset()
+    test_graph.add_node("TestData/sciadv.abj2479.pdf")
+    #test_graph.add_node("TestData/eScholarship UC item 28k495jd.pdf")
+    test_graph.add_node(
+        "TestData/Rasmussen2011_Article_AnOpenSystemFrameworkForIntegr.pdf")
+
 
 if __name__ == '__main__':
     if "-d" in sys.argv:
