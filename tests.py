@@ -2,12 +2,16 @@
 # TODO: switch to Unittest
 
 from cgi import test
+from re import T
 import sys
 import os
 from docgraph import DocGraph
 
 
 def test_docgraph():
+    """
+    Tests for the graph
+    """
     test_graph = DocGraph()
 
     # Test adding nodes
@@ -103,14 +107,34 @@ def test_docgraph():
     test_graph.add_node("TestData/node5")
     assert("node5" not in test_graph.suggested_docs)
 
+
+def test_parser():
+    """
+    Tests for the parser
+    """
+
+
+def test_general():
+    """
+    General tests that involve both graph and parser
+    """
+    test_graph = DocGraph()
+
     # Test automatic addition of citations
+    print("Test automatic addition of citations")
     test_graph.reset()
     test_graph.add_node("TestData/sciadv.abj2479.pdf")
-    #test_graph.add_node("TestData/eScholarship UC item 28k495jd.pdf")
     test_graph.add_node(
         "TestData/Rasmussen2011_Article_AnOpenSystemFrameworkForIntegr.pdf")
+    nodes = test_graph.list_nodes()
+    test_graph.add_all_connections(nodes[0])
+    assert(nodes[1] in test_graph.list_edges(nodes[0]))
 
 
 if __name__ == '__main__':
     if "-d" in sys.argv:
         test_docgraph()
+    if "-p" in sys.argv:
+        test_parser()
+    if "-g" in sys.argv:
+        test_general()

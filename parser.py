@@ -3,11 +3,9 @@
 
 from collections import defaultdict
 import os
-from queue import Empty
-import re
+import pdftitle
 import requests
 import PyPDF2
-import textract
 from bs4 import BeautifulSoup
 
 
@@ -62,23 +60,19 @@ def _parse_pdf(filepath):
     if len(refs) == 0:
         print("Error finding references")
         return
-    # print(refs)
-    print(resp.json().keys())
-    print(resp.json()['metadata'])
 
-    # Get title from metadata by reading PDF
+    # Get title from PDF
     # NOTE: This seems to work for most PDFs I've tried, but it's possible it won't
     # work for every PDF
-    pdfReader = PyPDF2.PdfFileReader(pdffile)
-    doc_info = pdfReader.getDocumentInfo()
-    print(doc_info)
-    title = doc_info["/Title"]
+    pdftitle.MISSING_CHAR = " "
+    title = pdftitle.get_title_from_file(filepath)
+    # print(title)
 
     # TODO: Determine where citations are in the document and associate a list of
     # page numbers with each citation. This isn't strictly necessary but could
     # be nice.
     refs = [(ref, -1) for ref in refs]
-    print(refs[0])
+    # print(refs[0])
 
     # # Get text that corresponds to citations
     # # NOTE: A different module is used that is better at handling the text
