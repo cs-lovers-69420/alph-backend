@@ -13,13 +13,14 @@ from enfilade import Enfilade
 
 class Node:
 
-    def __init__(self, source_file):
+    def __init__(self, source_file, main=False):
         self.source_file = source_file
 
         # Parse provided file and get information about document
         paper_info = parser.parse(source_file)
         self.title = paper_info["title"]
         self.authors = paper_info["authors"]
+        self.main = main  # Whether or not this is a "main" document
 
         # Store document as an Enfilade
         self.document = Enfilade(self.title, self.source_file)
@@ -39,6 +40,11 @@ class Node:
         """
         return self.document.get_citations()
 
+    def get_info(self):
+        """Returns a dictionary containing info about this node"""
+        data = {"title": self.title, "source": self.source_file}
+        return data
+
 
 class DocGraph:
 
@@ -48,9 +54,9 @@ class DocGraph:
         # A list of documents not in the graph but that the user might want
         self.suggested_docs = []
 
-    def add_node(self, filepath):
+    def add_node(self, filepath, main=False):
         """Add a new node to the graph"""
-        new_node = Node(filepath)
+        new_node = Node(filepath, main)
         if new_node.title in self.elements:
             # Instead of raising an error, just silently exit
             # TODO: Raise a warning instead?
@@ -110,6 +116,17 @@ class DocGraph:
                     break
             if suggest and not found:
                 self.suggested_docs.append(citation)
+
+    def make_all_graph_connections(self):
+        """
+        Make connections for all nodes in the graph
+        """
+        for node_name in self.elements:
+            node = self.elements[node_name]["Node"]
+            if node.main:
+                self.add_all_connections(node_name, suggest=True)
+            else:
+                self.add_all_connections(node_name, suggest=False)
 
     def list_nodes(self):
         """Return a list of all nodes in the graph."""
