@@ -43,7 +43,7 @@ class Enfilade:
         # page numbers where that title is cited.
         # TODO: store as matrix, so can get both titles on a page and pages for a title?
         self.references = defaultdict(lambda: [])
-        citation_list = list(set(citation_list))
+        citation_list = list(dict.fromkeys(citation_list))
         for pair in citation_list:
             self.references[pair[0]].append(pair[1])
 
@@ -52,4 +52,14 @@ class Enfilade:
         Return a list of cited documents (not including the page numbers).
         """
         refs = [title for title in self.references]
-        return list(set(refs))
+        return refs
+
+    def get_cited_pages(self, title):
+        """
+        Gets the page numbers where 'title' is cited
+        """
+        for ref in self.references:
+            if title in ref:
+                return self.references[ref]
+        print("Error: not found")
+        return [-1]

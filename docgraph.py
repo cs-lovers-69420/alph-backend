@@ -8,7 +8,7 @@
 
 import parser
 
-from enfilade import Enfilade
+from enfilade import Enfilade, defaultdict
 
 
 class Node:
@@ -42,8 +42,20 @@ class Node:
 
     def get_info(self):
         """Returns a dictionary containing info about this node"""
-        data = {"title": self.title, "source": self.source_file}
+        data = {"title": self.title, "source": self.source_file,
+                "citations": self.get_citations()}
         return data
+
+    def change_info(self, new_info):
+        # Only allow title changing so far
+        if "title" in new_info:
+            self.title = new_info["title"]
+
+    def get_cited_pages(self, title):
+        """
+        Gets the page numbers where 'title' is cited
+        """
+        return self.document.get_cited_pages(title)
 
 
 class DocGraph:
@@ -61,7 +73,8 @@ class DocGraph:
             # Instead of raising an error, just silently exit
             # TODO: Raise a warning instead?
             return
-        self.elements[new_node.title] = {"Node": new_node, "Edges": []}
+        self.elements[new_node.title] = {
+            "node": new_node, "edges": [], "pages": defaultdict(lambda: [])}
 
         # If this new node was one of the suggested ones, remove it from there
         # TODO: automatically add the relevant citation?
@@ -75,7 +88,7 @@ class DocGraph:
 
     def add_edge(self, node1, node2):
         """
-        Adds an edge between two nodes in the graph. Returns T/F based on success.
+        Adds a directed edge between two nodes in the graph. Returns T/F based on success.
         Takes two strings as input.
         """
         # Verify that both are in the graph
@@ -85,14 +98,51 @@ class DocGraph:
             raise KeyError(f"'{node2}' could not be found")
 
         # Check if the edge already exists
-        if node2 in self.elements[node1]["Edges"] or \
-                node1 in self.elements[node2]["Edges"]:
+        if node2 in self.elements[node1]["edges"]:
             return True
 
         # Create the edge
-        self.elements[node1]["Edges"].append(node2)
-        self.elements[node2]["Edges"].append(node1)
+        self.elements[node1]["edges"].append(node2)
+
+        # Get the page number and add it
+        node = self.get_node(node1)
+        pages = node.get_cited_pages(node2)
+        page_dict = self.elements[node1]["pages"]
+        for page in pages:
+            page_dict[page].append(node2)
         return True
+
+    def remove_node(self, node_name):
+        """Removes a specified node from the graph"""
+        # Make sure node is present
+        if node_name not in self.elements:
+            raise KeyError(f"'{node_name}' could not be found")
+
+        # Remove it
+        self.elements.pop(node_name)
+
+        # Remove all edges to node_name
+        for elem in self.elements:
+            if node_name in self.elements[elem]["edges"]:
+                self.elements[elem]["edges"].remove(node_name)
+
+    def change_property(self, node_name, info):
+        """Changes the information of a node"""
+        # Make sure node is present
+        if node_name not in self.elements:
+            raise KeyError(f"'{node_name}' could not be found")
+
+        # Modify
+        node = self.elements[node_name]["node"]
+        node.change_info(info)
+
+        # If title was modified, change title in elements and in all edges
+        if node_name != node.title:
+            self.elements[node.title] = self.elements.pop(node_name)
+            for elem in self.elements:
+                if node_name in self.elements[elem]["edges"]:
+                    self.elements[elem]["edges"] = [
+                        node.title if item == node_name else item for item in self.elements[elem]["edges"]]
 
     def add_all_connections(self, node_name, suggest=True):
         """
@@ -105,7 +155,7 @@ class DocGraph:
             # TODO: Raise an error
             raise KeyError(f"'{node_name}' could not be found")
 
-        node = self.elements[node_name]["Node"]
+        node = self.elements[node_name]["node"]
         # Make a connection for every citation
         for citation in node.get_citations():
             found = False
@@ -122,7 +172,7 @@ class DocGraph:
         Make connections for all nodes in the graph
         """
         for node_name in self.elements:
-            node = self.elements[node_name]["Node"]
+            node = self.elements[node_name]["node"]
             if node.main:
                 self.add_all_connections(node_name, suggest=True)
             else:
@@ -135,16 +185,29 @@ class DocGraph:
     def get_node(self, req_node) -> Node:
         """Return the requested node object."""
         if req_node in self.elements:
-            return self.elements[req_node]["Node"]
+            return self.elements[req_node]["node"]
         else:
             raise KeyError(f"'{req_node}' could not be found")
 
     def list_edges(self, req_node):
-        """Return a list of all edges for a specified node."""
-        if req_node in self.elements:
-            return [node for node in self.elements[req_node]["Edges"]]
-        else:
+        """
+        Return a list of all edges for a specified node and corresponding pages.
+        """
+        if req_node not in self.elements:
             raise KeyError(f"'{req_node}' could not be found")
+
+        data = {}
+        data['edges'] = self.elements[req_node]['edges']
+        data['pages'] = self.elements[req_node]['pages']
+        return data
+
+    def get_data(self, req_node):
+        """Return information about the requested node as a dictionary"""
+        data = {}
+        node = self.get_node(req_node)
+        data['file_info'] = node.get_info()
+        data['connections'] = self.list_edges(req_node)
+        return data
 
     def get_graph(self):
         """Returns the dictionary representation of the graph."""

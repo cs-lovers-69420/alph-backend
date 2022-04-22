@@ -37,16 +37,19 @@ class Pool(Resource):
         if args['title']:
             # Return information about requested file
             print("Getting file")
-            file_data = GRAPH.get_node(args['title']).get_info()
-            edges = GRAPH.list_edges(args['title'])
-            data = {"file_info": file_data, "connections": edges}
-            return data, 200
+            try:
+                data = GRAPH.get_data(args['title'])
+                return data, 200
+            except KeyError:
+                data = {"message": f"'{args['title']}' does not exist"}
+                return data, 404
         else:
             print("Getting graph")
 
         return {"data": "hello there", "tmp": "general kenobi", "list": [1, 2]}, 200
 
     def post(self):
+        """Add a new document to the pool"""
         # Get arguments from request
         parser = reqparse.RequestParser()
         parser.add_argument('filepath', type=str,
@@ -58,6 +61,54 @@ class Pool(Resource):
         # Create new node
         GRAPH.add_node(args["filepath"], args["main"])
         print(GRAPH.list_nodes())
+
+        return 200
+
+    def delete(self):
+        """Delete a document from the pool"""
+        # Get arguments from request
+        parser = reqparse.RequestParser()
+        parser.add_argument('title', type=str,
+                            required=True, help="title is required")
+        args = parser.parse_args()
+
+        # Delete document
+        GRAPH.remove_node(args["title"])
+        return 200
+
+    def patch(self):
+        """Modifies a document's attributes"""
+        # Get arguments from request
+        parser = reqparse.RequestParser()
+        parser.add_argument('title', type=str, required=True,
+                            help="title is required")
+        parser.add_argument('file_info', type=dict)
+        parser.add_argument('connections', type=list, location='json')
+        args = parser.parse_args()
+
+        # Modify document attributes
+        try:
+            GRAPH.change_property(args['title'], args['file_info'])
+        except KeyError:
+            data = {"message": f"'{args['title']}' does not exist"}
+            return data, 404
+
+        # Modify edges (by default, only adds edges. TODO: add more functionality.)
+        if args['connections']:
+            # Verify that the node exists
+            try:
+                GRAPH.get_node(args['title'])
+            except KeyError:
+                data = {"message": f"'{args['title']}' does not exist"}
+                return data, 404
+
+            # Add edges
+            for edge in args['connections']:
+                try:
+                    GRAPH.add_edge(args['title'], edge)
+                except KeyError:
+                    data = {"message": f"'{edge}' does not exist"}
+                    return data, 404
 
         return 200
 
