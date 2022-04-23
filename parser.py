@@ -76,7 +76,7 @@ def _parse_pdf(filepath):
     # Determine where citations are in the document and associate a list of
     # page numbers with each citation. Create a dictionary keyed by citation number
     page_dict = defaultdict(lambda: [])
-    expr = r"(?:\(|\[)(\d+(?:,\s\d+)*)(?:\)|\])"
+    expr = r"(?:\(|\[)((?:\d+(?:,\s\d+)*)|(?:\d+(?:[-–—]\d+)?))(?:\)|\])"
     pages = list(extract_pages(filepath))
     # Iterate through all pages
     for i, page in enumerate(pages[:1]):
@@ -97,9 +97,10 @@ def _parse_pdf(filepath):
                         nums = cit.split(",")
                         nums = [int(n.strip()) for n in nums]  # Convert to int
                         unique_cits.extend(nums)
-                    elif "-" in cit:
+                    # Check for all types of dashes
+                    elif re.search(r"[-–—]", cit):
                         # Create a range of numbers
-                        nums = cit.split("-")
+                        nums = re.split(r"[-–—]", cit)
                         nums = list(range(int(nums[0]), int(nums[1])))
                         unique_cits.extend(nums)
                     else:
