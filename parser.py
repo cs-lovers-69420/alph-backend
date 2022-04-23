@@ -2,11 +2,16 @@
 # the papers, such as title, authors, and citations to other papers.
 
 from collections import defaultdict
+from fileinput import filename
 import os
+import re
 import pdftitle
 import requests
-import PyPDF2
+import pdfplumber
 from bs4 import BeautifulSoup
+
+from pdfminer.high_level import extract_pages
+from pdfminer.layout import LTTextContainer
 
 
 def _parse_html(filepath):
@@ -49,17 +54,17 @@ def _parse_html(filepath):
 
 def _parse_pdf(filepath):
     """Parses a pdf file"""
-    # Open file for use later
-    pdffile = open(filepath, 'rb')
-
-    # Get citations from the scholarcy API
-    resp = requests.post(
-        "https://ref.scholarcy.com/api/references/extract",
-        files={'file': (filepath, pdffile, 'application/pdf')})
-    refs = resp.json()['references']
-    if len(refs) == 0:
-        print("Error finding references")
-        return
+    refs = []
+    if False:
+        with open(filepath, 'rb') as pdffile:
+            # Get citations from the scholarcy API
+            resp = requests.post(
+                "https://ref.scholarcy.com/api/references/extract",
+                files={'file': (filepath, pdffile, 'application/pdf')})
+            refs = resp.json()['references']
+            if len(refs) == 0:
+                print("Error finding references")
+                return
 
     # Get title from PDF
     # NOTE: This seems to work for most PDFs I've tried, but it's possible it won't
@@ -68,10 +73,61 @@ def _parse_pdf(filepath):
     title = pdftitle.get_title_from_file(filepath)
     # print(title)
 
-    # TODO: Determine where citations are in the document and associate a list of
-    # page numbers with each citation. This isn't strictly necessary but could
-    # be nice.
-    refs = [(ref, -1) for ref in refs]
+    # Determine where citations are in the document and associate a list of
+    # page numbers with each citation. Create a dictionary keyed by citation number
+    page_dict = defaultdict(lambda: [])
+    expr = r"(?:\(|\[)(\d+(?:,\s\d+)*)(?:\)|\])"
+    pages = list(extract_pages(filepath))
+    # Iterate through all pages
+    for i, page in enumerate(pages[:1]):
+        # Get all text on each page
+        for element in page:
+            if isinstance(element, LTTextContainer):
+                # Get all citations on page
+                text = element.get_text()
+                citations = re.findall(expr, text)
+                print(citations)
+
+                # Process list to get a list of unique citations
+                # If citation is of the form "(x, y)" or "(x-y)", replace with relevant numbers
+                unique_cits = []
+                for cit in citations:
+                    if "," in cit:
+                        # Split into a list of numbers and add this list to unique_cits
+                        nums = cit.split(",")
+                        nums = [int(n.strip()) for n in nums]  # Convert to int
+                        unique_cits.extend(nums)
+                    elif "-" in cit:
+                        # Create a range of numbers
+                        nums = cit.split("-")
+                        nums = list(range(int(nums[0]), int(nums[1])))
+                        unique_cits.extend(nums)
+                    else:
+                        unique_cits.append(int(cit))
+                unique_cits = list(set(unique_cits))
+
+                # Add each citation to the page dictionary
+                for cit in unique_cits:
+                    page_dict[cit].append(i)
+
+    print(page_dict)
+    # with pdfplumber.open(filepath) as pdf:
+    #     print("Starting loop")
+    #     page = pdf.pages[0]
+    #     text = page.extract_text(layout=True)
+    #     print(text)
+    #     citations = re.findall(expr, text)
+    #     print(citations)
+    # for i in range(reader.numPages):
+    #     print(f"Getting page {i}")
+    #     page = reader.getPage(i)
+    #     text = page.extractText()
+    #     citations = re.findall(expr, text)
+    #     print(citations)
+
+    # Associate a list of cited pages for each reference
+    refs = [(ref, page_dict[i+1]) for i, ref in enumerate(refs)]
+    print(refs)
     # print(refs[0])
 
     # # Get text that corresponds to citations
@@ -148,8 +204,8 @@ def parse(filepath):
 
 
 if __name__ == '__main__':
-    # parse(
-    #     "TestData/sciadv.abj2479.pdf")
+    parse(
+        "TestData/sciadv.abj2479.pdf")
     # parse(
     #     "TestData/3171221.3171289.pdf")
-    parse("TestData/Rasmussen2011_Article_AnOpenSystemFrameworkForIntegr.pdf")
+    # parse("TestData/Rasmussen2011_Article_AnOpenSystemFrameworkForIntegr.pdf")
