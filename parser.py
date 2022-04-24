@@ -55,31 +55,28 @@ def _parse_html(filepath):
 def _parse_pdf(filepath):
     """Parses a pdf file"""
     refs = []
-    if False:
-        with open(filepath, 'rb') as pdffile:
-            # Get citations from the scholarcy API
-            resp = requests.post(
-                "https://ref.scholarcy.com/api/references/extract",
-                files={'file': (filepath, pdffile, 'application/pdf')})
-            refs = resp.json()['references']
-            if len(refs) == 0:
-                print("Error finding references")
-                return
+    with open(filepath, 'rb') as pdffile:
+        # Get citations from the scholarcy API
+        resp = requests.post(
+            "https://ref.scholarcy.com/api/references/extract",
+            files={'file': (filepath, pdffile, 'application/pdf')})
+        refs = resp.json()['references']
+        if len(refs) == 0:
+            print("Error finding references")
+            return
 
     # Get title from PDF
     # NOTE: This seems to work for most PDFs I've tried, but it's possible it won't
     # work for every PDF
     pdftitle.MISSING_CHAR = " "
     title = pdftitle.get_title_from_file(filepath)
-    # print(title)
 
     # Determine where citations are in the document and associate a list of
     # page numbers with each citation. Create a dictionary keyed by citation number
     page_dict = defaultdict(lambda: [])
     expr = r"(?:\(|\[)((?:\d+(?:,\s\d+)*)|(?:\d+(?:[-–—]\d+)?))(?:\)|\])"
-    pages = list(extract_pages(filepath))
     # Iterate through all pages
-    for i, page in enumerate(pages[:1]):
+    for i, page in enumerate(extract_pages(filepath)):
         # Get all text on each page
         for element in page:
             if isinstance(element, LTTextContainer):
@@ -104,70 +101,21 @@ def _parse_pdf(filepath):
                         nums = list(range(int(nums[0]), int(nums[1])))
                         unique_cits.extend(nums)
                     else:
-                        unique_cits.append(int(cit))
+                        # Make sure not to add years
+                        cit = int(cit)
+                        if cit <= len(refs):
+                            unique_cits.append(cit)
                 unique_cits = list(set(unique_cits))
 
                 # Add each citation to the page dictionary
                 for cit in unique_cits:
                     page_dict[cit].append(i)
 
-    print(page_dict)
-    # with pdfplumber.open(filepath) as pdf:
-    #     print("Starting loop")
-    #     page = pdf.pages[0]
-    #     text = page.extract_text(layout=True)
-    #     print(text)
-    #     citations = re.findall(expr, text)
-    #     print(citations)
-    # for i in range(reader.numPages):
-    #     print(f"Getting page {i}")
-    #     page = reader.getPage(i)
-    #     text = page.extractText()
-    #     citations = re.findall(expr, text)
-    #     print(citations)
+    # print(page_dict)
 
     # Associate a list of cited pages for each reference
     refs = [(ref, page_dict[i+1]) for i, ref in enumerate(refs)]
     print(refs)
-    # print(refs[0])
-
-    # # Get text that corresponds to citations
-    # # NOTE: A different module is used that is better at handling the text
-    # pdftext = textract.process(filepath).decode("utf-8")
-    # # NOTE: Won't work if a cited paper has "references" in the title
-    # # TODO: replace with regex if this doesn't work reliably
-    # ind = pdftext.rfind("References")
-    # if ind == -1:
-    #     ind = pdftext.rfind("REFERENCES")
-    # refs = pdftext[ind:]
-    # # print(refs)
-
-    # # Find all citations
-    # # Starting with n=1: find citation n, get the citation, repeat for n+1 on the remaining
-    # # references string not including the citation. Get citation by looking for next number.
-    # # NOTE: won't work if citations aren't numbered. Is this ever the case? Idk.
-
-    # # Determine what's to the left and right of the first number to find other numbers
-    # re_specialchars = r".+*?^$()[]{}\|"
-    # curr = 1
-    # index = refs.find(str(curr))
-    # left_char = refs[index-1]
-    # right_char = refs[index+1]
-
-    # # Need to escape special characters if included
-    # if left_char in re_specialchars:
-    #     left_char = "\\" + left_char
-    # if right_char in re_specialchars:
-    #     right_char = "\\" + right_char
-    # expr = r"\s+" + left_char.strip() + r"\d+" + right_char.strip()
-    # # print(expr)
-
-    # citations = re.split(expr, refs)[1:]
-    # print(citations[0])
-    # print("\n\n")
-    # print(citations[1])
-    # print("\n\n")
-    # print(citations[2])
 
     ret = defaultdict(lambda: None)
     ret["title"] = title
