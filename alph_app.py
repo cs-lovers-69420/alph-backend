@@ -45,8 +45,8 @@ class Pool(Resource):
                 return data, 404
         else:
             print("Getting graph")
-
-        return {"data": "hello there", "tmp": "general kenobi", "list": [1, 2]}, 200
+            data = {"pool": GRAPH.list_nodes()}
+            return data, 200
 
     def post(self):
         """Add a new document to the pool"""
