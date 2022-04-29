@@ -2,7 +2,6 @@
 # the papers, such as title, authors, and citations to other papers.
 
 from collections import defaultdict
-from fileinput import filename
 import os
 import re
 import pdftitle
@@ -10,7 +9,7 @@ import requests
 import pdfplumber
 from bs4 import BeautifulSoup
 
-from pdfminer.high_level import extract_pages
+from pdfminer.high_level import extract_pages, extract_text
 from pdfminer.layout import LTTextContainer
 
 
@@ -48,6 +47,7 @@ def _parse_html(filepath):
     ret["title"] = title
     ret["authors"] = authors
     ret["citations"] = citations
+    ret["text"] = soup.get_text()
 
     return ret
 
@@ -121,6 +121,7 @@ def _parse_pdf(filepath):
     ret["title"] = title
     ret["authors"] = []  # TODO: Are authors necessary?
     ret["citations"] = refs
+    ret["text"] = extract_text(filepath)
     return ret
 
 

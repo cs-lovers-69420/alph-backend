@@ -28,11 +28,20 @@ class Node:
         # Set citations
         self.set_citations(paper_info["citations"])
 
+        # Set text
+        self.set_text(paper_info["text"])
+
     def set_citations(self, citation_list):
         """
         Sets the citations for this node to the provided list.
         """
         self.document.add_citations(citation_list)
+
+    def set_text(self, text):
+        """
+        Sets the text of the associated file.
+        """
+        self.document.add_text(text)
 
     def get_citations(self):
         """
@@ -40,10 +49,14 @@ class Node:
         """
         return self.document.get_citations()
 
+    def get_text(self):
+        """Returns the associated text of this node"""
+        return self.document.get_text()
+
     def get_info(self):
         """Returns a dictionary containing info about this node"""
         data = {"title": self.title, "source": self.source_file,
-                "citations": self.get_citations()}
+                "citations": self.get_citations(), "text": self.get_text()}
         return data
 
     def change_info(self, new_info):

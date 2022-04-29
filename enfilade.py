@@ -26,6 +26,8 @@ class Enfilade:
         """
         self.name = name
         self.source_file = source_file
+        self.references = defaultdict(lambda: [])
+        self.text = ""
 
     def create_structure(self):
         """
@@ -41,11 +43,15 @@ class Enfilade:
         """
         # This will be a dictionary keyed by title, where the value is a list of
         # page numbers where that title is cited.
-        # TODO: store as matrix, so can get both titles on a page and pages for a title?
-        self.references = defaultdict(lambda: [])
         citation_list = list(dict.fromkeys(citation_list))
         for pair in citation_list:
             self.references[pair[0]].append(pair[1])
+
+    def add_text(self, text):
+        """
+        Stores text of associated file
+        """
+        self.text = text
 
     def get_citations(self):
         """
@@ -53,6 +59,10 @@ class Enfilade:
         """
         refs = [title for title in self.references]
         return refs
+
+    def get_text(self):
+        """Returns text of document"""
+        return self.text
 
     def get_cited_pages(self, title):
         """
