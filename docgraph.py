@@ -14,55 +14,33 @@ from enfilade import Enfilade, defaultdict
 class Node:
 
     def __init__(self, source_file, main=False):
+        """
+        Initialize the node by creating an Enfilade using the source file.
+        """
         self.source_file = source_file
+        self.main = main
 
-        # Parse provided file and get information about document
-        paper_info = parser.parse(source_file)
-        self.title = paper_info["title"]
-        self.authors = paper_info["authors"]
-        self.main = main  # Whether or not this is a "main" document
-
-        # Store document as an Enfilade
-        self.document = Enfilade(self.title, self.source_file)
-
-        # Set citations
-        self.set_citations(paper_info["citations"])
-
-        # Set text
-        self.set_text(paper_info["text"])
-
-    def set_citations(self, citation_list):
-        """
-        Sets the citations for this node to the provided list.
-        """
-        self.document.add_citations(citation_list)
-
-    def set_text(self, text):
-        """
-        Sets the text of the associated file.
-        """
-        self.document.add_text(text)
-
-    def get_citations(self):
-        """
-        Returns a list of the citations for this node.
-        """
-        return self.document.get_citations()
-
-    def get_text(self):
-        """Returns the associated text of this node"""
-        return self.document.get_text()
+        # Create document structure
+        self.document = Enfilade(self.source_file)
+        self.title = self.document.get_title()
 
     def get_info(self):
         """Returns a dictionary containing info about this node"""
-        data = {"title": self.title, "source": self.source_file,
-                "citations": self.get_citations(), "text": self.get_text()}
+        data = {"title": self.title,
+                "source": self.source_file,
+                "citations": self.document.get_citations(),
+                "text": self.document.get_text(),
+                "image directory": self.document.get_image_dir()}
         return data
 
     def change_info(self, new_info):
         # Only allow title changing so far
         if "title" in new_info:
             self.title = new_info["title"]
+
+    def get_citations(self):
+        """Returns a list of citations for this node"""
+        return self.document.get_citations()
 
     def get_cited_pages(self, title):
         """
@@ -122,7 +100,8 @@ class DocGraph:
         pages = node.get_cited_pages(node2)
         page_dict = self.elements[node1]["pages"]
         for page in pages:
-            page_dict[page].append(node2)
+            for num in page:
+                page_dict[num].append(node2)
         return True
 
     def remove_node(self, node_name):

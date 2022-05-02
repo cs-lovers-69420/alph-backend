@@ -3,11 +3,13 @@
 # per node that represent sections of the document that are represented by any
 # children of the node.
 
-# TODO:
-# 1) Need some sort of info about where in the document citations are made. Might
-#    need to move the edge logic into here.
-
+import os
+import pathlib
 from collections import defaultdict
+from pdf2image import convert_from_path
+import fitz
+
+import parser
 
 
 class Enfilade:
@@ -19,21 +21,29 @@ class Enfilade:
     # NOTE: This implementation below is not an Enfilade. If it will be useful in the future,
     # the implementation will then be finished.
 
-    def __init__(self, name, source_file):
+    def __init__(self, source_file):
         """
-        Creates an Enfilade with specified name from a preprocessed source file.
-        When stored in memory, the filepath will be a textfile [source_file].enf.
+        Creates an Enfilade from a source file. Parses the source file to get info
+        from it and stores the info as parameters here.
         """
-        self.name = name
+        # Setup
         self.source_file = source_file
         self.references = defaultdict(lambda: [])
-        self.text = ""
 
-    def create_structure(self):
-        """
-        Creates the Enfilade structure (TODO: do this)
-        """
-        pass
+        # Parse document and get info
+        print("parsing")
+        paper_info = parser.parse(source_file)
+        print("parsed")
+        self.title = paper_info["title"]
+        self.text = paper_info["text"]
+        print("adding")
+        self.add_citations(paper_info["citations"])
+        print("added")
+
+        # Convert document to images
+        print("converting")
+        self.imagedir = self.convert_to_images()
+        print("converted")
 
     def add_citations(self, citation_list):
         """
@@ -43,15 +53,34 @@ class Enfilade:
         """
         # This will be a dictionary keyed by title, where the value is a list of
         # page numbers where that title is cited.
-        citation_list = list(dict.fromkeys(citation_list))
         for pair in citation_list:
             self.references[pair[0]].append(pair[1])
 
-    def add_text(self, text):
+    def convert_to_images(self):
         """
-        Stores text of associated file
+        Converts the stored pdf file to a directory of images. Returns image directory name.
         """
-        self.text = text
+        # Prepare directory
+        dirpath = os.path.join(
+            os.path.dirname(self.source_file),
+            pathlib.Path(self.source_file).stem + "_images"
+        )
+        if not os.path.exists(dirpath):
+            os.mkdir(dirpath)
+
+        # Convert
+        mat = fitz.Matrix(2.0, 2.0)
+        doc = fitz.open(self.source_file)
+        for i, page in enumerate(doc):
+            # Create filename
+            imagename = "page" + str(i) + ".jpg"
+            path = os.path.join(dirpath, imagename)
+
+            # Save
+            pix = page.get_pixmap(matrix=mat)
+            pix.save(path)
+
+        return dirpath
 
     def get_citations(self):
         """
@@ -63,6 +92,14 @@ class Enfilade:
     def get_text(self):
         """Returns text of document"""
         return self.text
+
+    def get_title(self):
+        """Returns title of document"""
+        return self.title
+
+    def get_image_dir(self):
+        """Returns image directory of document"""
+        return self.imagedir
 
     def get_cited_pages(self, title):
         """

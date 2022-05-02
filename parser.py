@@ -83,7 +83,7 @@ def _parse_pdf(filepath):
                 # Get all citations on page
                 text = element.get_text()
                 citations = re.findall(expr, text)
-                print(citations)
+                # print(citations)
 
                 # Process list to get a list of unique citations
                 # If citation is of the form "(x, y)" or "(x-y)", replace with relevant numbers
@@ -115,7 +115,7 @@ def _parse_pdf(filepath):
 
     # Associate a list of cited pages for each reference
     refs = [(ref, page_dict[i+1]) for i, ref in enumerate(refs)]
-    print(refs)
+    # print(refs)
 
     ret = defaultdict(lambda: None)
     ret["title"] = title
