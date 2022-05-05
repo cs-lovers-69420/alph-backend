@@ -54,7 +54,7 @@ class Enfilade:
         # This will be a dictionary keyed by title, where the value is a list of
         # page numbers where that title is cited.
         for pair in citation_list:
-            self.references[pair[0]].append(pair[1])
+            self.references[pair[0]] = pair[1]
 
     def convert_to_images(self):
         """
@@ -110,3 +110,8 @@ class Enfilade:
                 return self.references[ref]
         print("Error: not found")
         return [-1]
+
+
+if __name__ == '__main__':
+    testdoc = Enfilade("TestData/sciadv.abj2479.pdf")
+    print(testdoc.references)

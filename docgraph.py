@@ -6,8 +6,6 @@
 # information on where in the cited document the citation appears. To determine
 # citations, the Node class runs the parser.
 
-import parser
-
 from enfilade import Enfilade, defaultdict
 
 
@@ -22,7 +20,7 @@ class Node:
 
         # Create document structure
         self.document = Enfilade(self.source_file)
-        self.title = self.document.get_title()
+        self.title = self.document.get_title().lower()
 
     def get_info(self):
         """Returns a dictionary containing info about this node"""
@@ -100,8 +98,7 @@ class DocGraph:
         pages = node.get_cited_pages(node2)
         page_dict = self.elements[node1]["pages"]
         for page in pages:
-            for num in page:
-                page_dict[num].append(node2)
+            page_dict[page].append(node2)
         return True
 
     def remove_node(self, node_name):
@@ -144,7 +141,6 @@ class DocGraph:
         already in the graph.
         """
         if node_name not in self.elements:
-            # TODO: Raise an error
             raise KeyError(f"'{node_name}' could not be found")
 
         node = self.elements[node_name]["node"]
@@ -152,7 +148,7 @@ class DocGraph:
         for citation in node.get_citations():
             found = False
             for title in self.elements:
-                if title in citation:
+                if title in citation.lower():
                     self.add_edge(node_name, title)
                     found = True
                     break

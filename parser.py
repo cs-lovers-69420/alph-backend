@@ -65,7 +65,7 @@ def _parse_pdf(filepath):
             print("Error finding references")
             return
 
-    # Get title from PDF
+    # Get title from PDF TODO: use pdftitle only if not in the metadata
     # NOTE: This seems to work for most PDFs I've tried, but it's possible it won't
     # work for every PDF
     pdftitle.MISSING_CHAR = " "
