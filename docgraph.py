@@ -44,6 +44,7 @@ class Node:
         """
         Gets the page numbers where 'title' is cited
         """
+        print(title)
         return self.document.get_cited_pages(title)
 
 

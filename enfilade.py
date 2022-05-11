@@ -106,7 +106,7 @@ class Enfilade:
         Gets the page numbers where 'title' is cited
         """
         for ref in self.references:
-            if title in ref:
+            if title in ref.lower():
                 return self.references[ref]
         print("Error: not found")
         return [-1]
